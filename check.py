@@ -15,22 +15,23 @@ wounded = []
 
 import copy
 
-FIELD_HEIGHT = 4
-FIELD_WIDTH = 4
+v = 0
+FIELD_HEIGHT = 7
+FIELD_WIDTH = 7
 
 sea_field_original = [[0 for _ in range(FIELD_WIDTH)] for _ in
                       range(FIELD_HEIGHT)]
 sea_field_tmp = copy.deepcopy(sea_field_original)
 sea_field_chance = [[0 for _ in range(FIELD_WIDTH)] for _ in
                     range(FIELD_HEIGHT)]
-ships = [4, 3]
+all_ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
 
 class Ship:
-    def __init__(self, length, coordinates, position):
+    def __init__(self, length, position, coordinates=None):
         self._length = length
-        self._coordinates = coordinates
         self._position = position
+        self._coordinates = coordinates
 
     def set_coordinates(self, new_coordinates):
         self._coordinates = new_coordinates
@@ -56,81 +57,98 @@ def check_put_ship(x, y, ship):
     Если не могу разместить, возвращаю None.
 
     Переменные:
-        ship_model - список который имеет возможные координаты
+        possible_coordinates - список который имеет возможные координаты
         ship_x и ship_y - координаты корабля
     """
-    if ship[1] == 'horizontal':
-        ship_model = [(x, y + _) for _ in range(ship[0])]
+    if ship.get_position() == 'horizontal':
+        possible_coordinates = [(x, y + _) for _ in range(ship.get_length())]
     else:
-        ship_model = [(x + _, y) for _ in range(ship[0])]
+        possible_coordinates = [(x + _, y) for _ in range(ship.get_length())]
 
     # начинаем проверку каждой клетки корабля
-    for ship_x, ship_y in ship_model:
+    for ship_x, ship_y in possible_coordinates:
         # проверяяем не вышли ли мы за границу
         if ship_x >= FIELD_WIDTH or ship_y >= FIELD_HEIGHT:
             return
         # пустая ли клетка
         for _i in [ship_x - 1, ship_x, ship_x + 1]:
             for _j in [ship_y - 1, ship_y, ship_y + 1]:
-                try:
+                if (-1 < _i < FIELD_HEIGHT) and (-1 < _j < FIELD_WIDTH):
                     if sea_field_tmp[_i][_j] != 0:
                         return
-                except:
-                    pass
     # распологаем корабль
-    for ship_x, ship_y in ship_model:
+    for ship_x, ship_y in possible_coordinates:
         sea_field_tmp[ship_x][ship_y] = 2
-    return ship_model
+    return possible_coordinates
 
 
-def f():
-    ship_num = 0
-    ships_tmp = []
-    ship_tmp = None
-    while -1 < ship_num < len(ships):
-        ship_model = None
-        for i in range(FIELD_HEIGHT):
-            for j in range(FIELD_WIDTH):
-                if not ship_tmp:
-                    ship_tmp = [ships[ship_num], 'horizontal']
-                ship_model = check_put_ship(i, j, ship_tmp)
-                if ship_model:
-                    new_ship = Ship(ship_tmp[0], ship_model, ship_tmp[1])
-                    ship_tmp = None
-                    ships_tmp.append(new_ship)
-                    ship_num += 1
-                    if ship_num == len(ships):
-                        add_chance()
-                        ship_num -= 1
-                        ship_pop = ships_tmp.pop()
-                        ship_model = ship_pop.get_coordinates()
-                        ship_tmp = [ship_pop.get_length(),
-                                    ship_pop.get_position()]
-                        i, j = ship_model[0]
-                        for x, y in ship_model:
-                            sea_field_tmp[x][y] = 0
-                    else:
-                        break
+def next_ship(ship_num, position):
+    ship = Ship(all_ships[ship_num], position)
+    for x in range(FIELD_HEIGHT):
+        for y in range(FIELD_WIDTH):
+            ship.set_coordinates(check_put_ship(x, y, ship))
+            if ship.get_coordinates():
+                if ship_num + 1 == len(all_ships):
+                    add_chance()
+                    print('V:', v)
                 else:
-                    if i == FIELD_HEIGHT-1 and j == FIELD_WIDTH-1:
-                        if ship_tmp[1] == 'horizontal':
-                            ship_tmp[1] = 'vertical'
-                        else:
-                            ship_num -= 1
-                            ship_pop = ships_tmp.pop()
-                            ship_model = ship_pop.get_coordinates()
-                            ship_tmp = (ship_pop.get_length(),
-                                        ship_pop.get_position())
-                            i, j = ship_model[0]
-                            for x, y in ship_model:
-                                sea_field_tmp[x][y] = 0
+                    next_ship(ship_num + 1, 'horizontal')
+                for _x, _y in ship.get_coordinates():
+                    sea_field_tmp[_x][_y] = 0
+                ship.set_coordinates(None)
 
-            if ship_model:
-                break
+    if ship.get_position() == 'horizontal' and ship.get_length() > 1:
+        next_ship(ship_num, 'vertical')
+
+
+
+
+    # while -1 < ship_num < len(all_ships):
+    #     ship_model = None
+    #     for i in range(FIELD_HEIGHT):
+    #         for j in range(FIELD_WIDTH):
+    #             if not ship_tmp:
+    #                 ship_tmp = [all_ships[ship_num], 'horizontal']
+    #             ship_model = check_put_ship(i, j, ship_tmp)
+    #             if ship_model:
+    #                 new_ship = Ship(ship_tmp[0], ship_model, ship_tmp[1])
+    #                 ship_tmp = None
+    #                 ships_tmp.append(new_ship)
+    #                 ship_num += 1
+    #                 if ship_num == len(all_ships):
+    #                     add_chance()
+    #                     ship_num -= 1
+    #                     ship_pop = ships_tmp.pop()
+    #                     ship_model = ship_pop.get_coordinates()
+    #                     ship_tmp = [ship_pop.get_length(),
+    #                                 ship_pop.get_position()]
+    #                     i, j = ship_model[0]
+    #                     for x, y in ship_model:
+    #                         sea_field_tmp[x][y] = 0
+    #                 else:
+    #                     break
+    #             else:
+    #                 if i == FIELD_HEIGHT - 1 and j == FIELD_WIDTH - 1:
+    #                     if ship_tmp[1] == 'horizontal':
+    #                         ship_tmp[1] = 'vertical'
+    #                     else:
+    #                         ship_num -= 1
+    #                         ship_pop = ships_tmp.pop()
+    #                         ship_model = ship_pop.get_coordinates()
+    #                         ship_tmp = (ship_pop.get_length(),
+    #                                     ship_pop.get_position())
+    #                         i, j = ship_model[0]
+    #                         for x, y in ship_model:
+    #                             sea_field_tmp[x][y] = 0
+    #
+    #         if ship_model:
+    #             break
 
 
 def add_chance():
-    """Добавление шансев."""
+    """Добавление шансов."""
+    global v
+    v += 1
     for i in range(FIELD_HEIGHT):
         for j in range(FIELD_WIDTH):
             if sea_field_tmp[i][j] == 2:
@@ -138,12 +156,11 @@ def add_chance():
 
 
 def main():
-    for i in range(FIELD_HEIGHT):
-        for j in range(FIELD_WIDTH):
-            f()
-            add_chance()
-            print(*sea_field_chance, sep='\n')
-            input()
+    ship_num = 0
+    next_ship(ship_num, 'horizontal')
+    print('V:', v)
+    print(*sea_field_chance, sep='\n')
+
 
 
 if __name__ == '__main__':
