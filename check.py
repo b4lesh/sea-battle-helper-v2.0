@@ -78,6 +78,7 @@ def check_put_ship(x, y, ship):
                 if (-1 < i < FIELD_HEIGHT) and (-1 < j < FIELD_WIDTH) and \
                         sea_field_tmp[i][j] in ('m', 'x'):
                     return
+
     # распологаем корабль если еще не вышли из функции
     for ship_x, ship_y in possible_coordinates:
         if sea_field_original[ship_x][ship_y] == '/':
@@ -124,6 +125,12 @@ def add_chance():
 def do_simple_chance():
     """Подчитывает количетсво шансов."""
     chances = []
+
+    for x in range(FIELD_HEIGHT):
+        for y in range(FIELD_WIDTH):
+            if sea_field_tmp[x][y] == '/':
+                sea_field_chance[x][y] = 0
+
     for x in range(FIELD_HEIGHT):
         for y in range(FIELD_WIDTH):
             if sea_field_chance[x][y] not in chances:
@@ -166,7 +173,7 @@ if __name__ == '__main__':
                           [' ', '.', ' ', ' ', ' ', ' ', ' '],
                           [' ', ' ', ' ', ' ', '.', ' ', ' '],
                           ['.', ' ', ' ', ' ', ' ', ' ', '/']]
-    all_ships = [4, 3, 3]
+    all_ships = [4, 3, 3, 2]
 
     sea_field_tmp = deepcopy(sea_field_original)
     sea_field_chance = [[0 for _ in range(FIELD_WIDTH)]
