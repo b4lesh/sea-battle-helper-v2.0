@@ -16,6 +16,101 @@
 
 
 
+class SeaField:
+    """Класс для поля."""
+
+    def __init__(self, sea_field, field_height, field_width, all_ships):
+        from copy import deepcopy
+        self._sea_field_original = deepcopy(sea_field)
+        self._sea_field_tmp = deepcopy(sea_field)
+        self._field_height = field_height
+        self._field_width = field_width
+        self._all_ships = all_ships
+        self._sea_field_chance = [[0 for _ in range(field_width)]
+                                  for _ in range(field_height)]
+        self._wounded = [(x, y) for y in range(field_width) for x in
+                         range(field_height)
+                         if sea_field[x][y] == '/']
+        self._location_options = 0
+
+    def get_ship(self, num_ship):
+        return self._all_ships[num_ship]
+
+    def get_field_height(self):
+        return self._field_height
+
+    def get_field_width(self):
+        return self._field_width
+
+    def get_all_ships(self):
+        return self._all_ships
+
+    def get_wounded(self):
+        return self._wounded
+
+    def get_sea_field_chance(self):
+        return self._sea_field_chance
+
+    def check_put_ship(self, x, y, ship):
+        """Проверяет могу ли я поставить корабль на эту клетку.
+
+        В случае если я смогу разместить корабль, я рамещаю его на поле
+        sea_field_tmp и возвращаю список из координат каждой ячейки этого
+            корабля.
+        Если не могу разместить, возвращаю None.
+        Переменные:
+            possible_coordinates - список возможных координат
+            ship_x и ship_y - координаты корабля
+        """
+        if ship.get_orientation() == 'horizontal':
+            possible_coordinates = [(x, y + _) for _ in
+                                    range(ship.get_length())]
+        else:
+            possible_coordinates = [(x + _, y) for _ in
+                                    range(ship.get_length())]
+
+        # проверка не выходит ли последняя координата за поле
+        ship_x, ship_y = possible_coordinates[-1]
+        if ship_x >= self._field_height or ship_y >= self._field_width:
+            return
+        # проверка всех клеток корабля
+        for ship_x, ship_y in possible_coordinates:
+            if self._sea_field_tmp[ship_x][ship_y] not in (' ', '/'):
+                return
+        # проверка всех клеток вокруг кооробля
+        for x, y in possible_coordinates:
+            for i in (x - 1, x, x + 1):
+                for j in (y - 1, y, y + 1):
+                    if (-1 < i < self._field_height) and \
+                            (-1 < j < self._field_width) and \
+                            self._sea_field_tmp[i][j] in ('m', 'x'):
+                        return
+
+        # распологаем корабль если еще не вышли из функции
+        for ship_x, ship_y in possible_coordinates:
+            if self._sea_field_original[ship_x][ship_y] == '/':
+                self._wounded.remove((ship_x, ship_y))
+            self._sea_field_tmp[ship_x][ship_y] = 'm'
+        return possible_coordinates
+
+    def add_chance(self):
+        """Добавление шансов."""
+        self._location_options += 1
+        for i in range(self._field_height):
+            for j in range(self._field_width):
+                if self._sea_field_tmp[i][j] == 'm':
+                    self._sea_field_chance[i][j] += 1
+
+        print('Вариантов:', self._location_options)
+
+    def remove_ship_from_field(self, x, y):
+        if self._sea_field_original[x][y] == '/':
+            self._wounded.append((x, y))
+            self._sea_field_tmp[x][y] = '/'
+        else:
+            self._sea_field_tmp[x][y] = ' '
+
+
 class Ship:
     """Класс для работы с кораблями для поля."""
 
@@ -46,89 +141,33 @@ class Ship:
         return self._coordinates
 
 
-def check_put_ship(x, y, ship):
-    """Проверяет могу ли я поставить корабль на эту клетку.
-
-    В случае если я смогу разместить корабль, я рамещаю его на поле
-    sea_field_tmp и возвращаю список из координат каждой ячейки этого корабля.
-    Если не могу разместить, возвращаю None.
-    Переменные:
-        possible_coordinates - список возможных координат
-        ship_x и ship_y - координаты корабля
-    """
-    if ship.get_orientation() == 'horizontal':
-        possible_coordinates = tuple(
-            [(x, y + _) for _ in range(ship.get_length())])
-    else:
-        possible_coordinates = tuple(
-            [(x + _, y) for _ in range(ship.get_length())])
-
-    # проверка не выходит ли последняя координата за поле
-    ship_x, ship_y = possible_coordinates[-1]
-    if ship_x >= FIELD_HEIGHT or ship_y >= FIELD_WIDTH:
-        return
-    # проверка всех клеток корабля
-    for ship_x, ship_y in possible_coordinates:
-        if sea_field_tmp[ship_x][ship_y] not in (' ', '/'):
-            return
-    # проверка всех клеток вокруг кооробля
-    for x, y in possible_coordinates:
-        for i in (x - 1, x, x + 1):
-            for j in (y - 1, y, y + 1):
-                if (-1 < i < FIELD_HEIGHT) and (-1 < j < FIELD_WIDTH) and \
-                        sea_field_tmp[i][j] in ('m', 'x'):
-                    return
-
-    # распологаем корабль если еще не вышли из функции
-    for ship_x, ship_y in possible_coordinates:
-        if sea_field_original[ship_x][ship_y] == '/':
-            wounded.remove((ship_x, ship_y))
-        sea_field_tmp[ship_x][ship_y] = 'm'
-    return possible_coordinates
-
-
-def next_ship(ship_num, orientation):
-    """Рекурсивная функция которая перебирает все окрабли."""
-    ship = Ship(all_ships[ship_num], orientation)
-    for x in range(FIELD_HEIGHT):
-        for y in range(FIELD_WIDTH):
-            ship.set_coordinates(check_put_ship(x, y, ship))
+def next_ship(sea_field, ship_num, orientation):
+    """Рекурсивная функция которая перебирает все корабли."""
+    ship = Ship(sea_field.get_ship(ship_num), orientation)
+    for x in range(sea_field.get_field_height()):
+        for y in range(sea_field.get_field_width()):
+            ship.set_coordinates(sea_field.check_put_ship(x, y, ship))
             if ship.get_coordinates():
-                if ship_num + 1 == len(all_ships):
-                    if not wounded:
-                        add_chance()
-                        print('Вариантов:', location_options)
+                if ship_num + 1 == len(sea_field.get_all_ships()):
+                    if not sea_field.get_wounded():
+                        sea_field.add_chance()
                 else:
-                    next_ship(ship_num + 1, 'horizontal')
+                    next_ship(sea_field, ship_num + 1, 'horizontal')
                 for _x, _y in ship.get_coordinates():
-                    if sea_field_original[_x][_y] == '/':
-                        wounded.append((_x, _y))
-                        sea_field_tmp[_x][_y] = '/'
-                    else:
-                        sea_field_tmp[_x][_y] = ' '
+                    sea_field.remove_ship_from_field(_x, _y)
                 ship.set_coordinates(None)
 
     if ship.get_orientation() == 'horizontal' and ship.get_length() > 1:
-        next_ship(ship_num, 'vertical')
+        next_ship(sea_field, ship_num, 'vertical')
 
 
-def add_chance():
-    """Добавление шансов."""
-    global location_options
-    location_options += 1
-    for i in range(FIELD_HEIGHT):
-        for j in range(FIELD_WIDTH):
-            if sea_field_tmp[i][j] == 'm':
-                sea_field_chance[i][j] += 1
-
-
-def do_simple_chance():
+def do_simple_chance(field_height, field_width, sea_field, sea_field_chance):
     """Подчитывает количетсво шансов."""
     # выписываем все шансы в append и делаем нулевой шанс в клетка с попаданием
     chances = []
-    for x in range(FIELD_HEIGHT):
-        for y in range(FIELD_WIDTH):
-            if sea_field_tmp[x][y] == '/':
+    for x in range(field_height):
+        for y in range(field_width):
+            if sea_field[x][y] == '/':
                 sea_field_chance[x][y] = 0
             if sea_field_chance[x][y] not in chances:
                 chances.append(sea_field_chance[x][y])
@@ -136,75 +175,55 @@ def do_simple_chance():
     # переписываем поле с шансами с упрошенными числами
     # сортировка нужна, так как от нее зависят индексы в упрощенной таблице
     chances.sort()
-    for x in range(FIELD_HEIGHT):
-        for y in range(FIELD_WIDTH):
+    for x in range(field_height):
+        for y in range(field_width):
             if sea_field_chance[x][y] != 0:
                 sea_field_chance[x][y] = chances.index(
                     sea_field_chance[x][y]) + 1
     return len(chances)
 
 
-def get_hit(length_chances):
+def get_hit(field_height, field_width, sea_field_chance, length_chances):
     """Возвращает координаты наилучшего удара."""
-    for x in range(FIELD_HEIGHT):
-        for y in range(FIELD_WIDTH):
+    for x in range(field_height):
+        for y in range(field_width):
             if sea_field_chance[x][y] == length_chances:
                 return x + 1, y + 1
 
 
 def main():
     """Основная функция."""
-    ship_num = 0
-    next_ship(ship_num, 'horizontal')
+    field_height = 10
+    field_width = 10
 
-    length_chances = do_simple_chance()
+    # sea_field_original = [[' ' for _ in range(field_width)] for _ in
+    #                       range(field_height)]
+    sea_field = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
+    all_ships = [4, 3]
+
+    sea_field_1 = SeaField(sea_field, field_height, field_width, all_ships)
+
+    num_ship = 0
+    next_ship(sea_field_1, num_ship, 'horizontal')
+
+    sea_field_chance = sea_field_1.get_sea_field_chance()
+    length_chances = do_simple_chance(field_height, field_width, sea_field,
+                                      sea_field_chance)
     print(*sea_field_chance, sep='\n')
-    hit = get_hit(length_chances)
+    hit = get_hit(field_height, field_width, sea_field_chance, length_chances)
     print('Наилучший удар:', *hit)
 
 
 if __name__ == '__main__':
-    from copy import deepcopy
-
-    # количесто вариантов расположения кораблей на поле tmp
-    location_options = 0
-
-    FIELD_HEIGHT = 10
-    FIELD_WIDTH = 10
-
-    # sea_field_original = [[' ' for _ in range(FIELD_WIDTH)] for _ in
-    #                       range(FIELD_HEIGHT)]
-
-    # sea_field_original = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
-    sea_field_original = [['x', 'x', 'x', 'x', '.', ' ', ' ', ' ', '.', '.'],
-                          ['.', '.', '.', '.', '.', ' ', ' ', ' ', '.', 'x'],
-                          [' ', ' ', '.', ' ', ' ', '.', '.', '.', '.', '.'],
-                          [' ', ' ', ' ', '.', ' ', ' ', '.', 'x', '.', ' '],
-                          ['.', ' ', ' ', ' ', '.', ' ', '.', 'x', '.', '.'],
-                          [' ', '.', ' ', ' ', ' ', '.', '.', 'x', '.', ' '],
-                          [' ', ' ', '.', ' ', ' ', ' ', '.', '.', '.', ' '],
-                          ['.', ' ', ' ', '.', '.', '.', ' ', '.', ' ', ' '],
-                          [' ', '.', ' ', '.', 'x', '.', ' ', ' ', ' ', ' '],
-                          [' ', ' ', '.', '.', 'x', '.', ' ', ' ', ' ', ' ']]
-
-    all_ships = [3, 2, 2]
-
-    sea_field_tmp = deepcopy(sea_field_original)
-    sea_field_chance = [[0 for _ in range(FIELD_WIDTH)]
-                        for _ in range(FIELD_HEIGHT)]
-
-    wounded = [(x, y) for y in range(FIELD_WIDTH) for x in range(FIELD_HEIGHT)
-               if sea_field_original[x][y] == '/']
-
     import time
 
     a = time.time()
