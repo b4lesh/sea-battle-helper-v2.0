@@ -15,11 +15,11 @@
 """
 
 
-
 class SeaField:
     """Класс для поля."""
 
     def __init__(self, sea_field, field_height, field_width, all_ships):
+        """init."""
         from copy import deepcopy
         self._sea_field_original = deepcopy(sea_field)
         self._sea_field_tmp = deepcopy(sea_field)
@@ -34,21 +34,33 @@ class SeaField:
         self._location_options = 0
 
     def get_ship(self, num_ship):
+        """По порядковому номеру корабля возвращает его длину."""
         return self._all_ships[num_ship]
 
     def get_field_height(self):
+        """Вовзращает высоту поля.
+
+        Станет бесполезной при окончательном варианте
+        """
         return self._field_height
 
     def get_field_width(self):
+        """Вовзращает ширину поля.
+
+        Станет бесполезной при окончательном варианте
+        """
         return self._field_width
 
     def get_all_ships(self):
+        """Возвращет весь список кораблей."""
         return self._all_ships
 
     def get_wounded(self):
+        """Возвращет список клеток раненых кораблей."""
         return self._wounded
 
     def get_sea_field_chance(self):
+        """Возвращет поле с шансами."""
         return self._sea_field_chance
 
     def check_put_ship(self, x, y, ship):
@@ -104,6 +116,10 @@ class SeaField:
         print('Вариантов:', self._location_options)
 
     def remove_ship_from_field(self, x, y):
+        """Удаляет корабль с поля tmp.
+
+        Возвращает попадания в wounded и на поле tmp
+        """
         if self._sea_field_original[x][y] == '/':
             self._wounded.append((x, y))
             self._sea_field_tmp[x][y] = '/'
