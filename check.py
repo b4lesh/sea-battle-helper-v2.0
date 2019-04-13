@@ -13,6 +13,7 @@
     '/' - попадание
     'x' - сбитый корабль
 """
+import time
 
 
 class SeaField:
@@ -242,7 +243,7 @@ def test_func(all):
     return sea_field_chance
 
 
-def main():
+def main(start_time):
     """Основная функция."""
 
     from multiprocessing import Pool, TimeoutError
@@ -251,16 +252,6 @@ def main():
 
     # sea_field_original = [[' ' for _ in range(field_width)] for _ in
     #                       range(field_height)]
-    # sea_field_t = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
     sea_field_t = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
@@ -274,7 +265,7 @@ def main():
     all_ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
     hit = None
     p = Pool()
-    timeout = 15
+    timeout = 10
     try:
         for l in range(1, len(all_ships) + 1):
             all_data = (
@@ -296,6 +287,11 @@ def main():
             # print(*sea_field_chance_end, sep='\n')
             hit = get_hit(field_height, field_width, sea_field_chance_end,
                           length_chances)
+            if time.time() - start_time > timeout / 2:
+                print('Почти наилучший удар:', hit)
+                p.terminate()
+                p.join()
+                return
     except TimeoutError:
         print('Почти наилучший удар:', hit)
     else:
@@ -307,8 +303,6 @@ def main():
 
 
 if __name__ == '__main__':
-    import time
-
-    a = time.time()
-    main()
-    print('time: ', round(time.time() - a, 3))
+    start_time = time.time()
+    main(start_time)
+    print('time: ', round(time.time() - start_time, 3))
