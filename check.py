@@ -33,9 +33,9 @@ class SeaField:
                          if sea_field[x][y] == '/']
         self._location_options = 0
 
-    def get_ship(self, num_ship):
+    def get_ship(self, ship_num):
         """По порядковому номеру корабля возвращает его длину."""
-        return self._all_ships[num_ship]
+        return self._all_ships[ship_num]
 
     def get_field_height(self):
         """Вовзращает высоту поля.
@@ -113,7 +113,7 @@ class SeaField:
                 if self._sea_field_tmp[i][j] == 'm':
                     self._sea_field_chance[i][j] += 1
 
-        print('Вариантов:', self._location_options)
+        # print('Вариантов:', self._location_options)
 
     def remove_ship_from_field(self, x, y):
         """Удаляет корабль с поля tmp.
@@ -207,35 +207,80 @@ def get_hit(field_height, field_width, sea_field_chance, length_chances):
                 return x + 1, y + 1
 
 
+def test_func(all):
+    sea_field_t, field_height, field_width, all_ships, x, y = all
+    sea_field = SeaField(sea_field_t, field_height, field_width, all_ships)
+    ship_num = 0
+    orientation = 'horizontal'
+    ship = Ship(sea_field.get_ship(ship_num), orientation)
+    ship.set_coordinates(sea_field.check_put_ship(x, y, ship))
+    if ship.get_coordinates():
+        if ship_num + 1 == len(sea_field.get_all_ships()):
+            if not sea_field.get_wounded():
+                sea_field.add_chance()
+        else:
+            next_ship(sea_field, ship_num + 1, 'horizontal')
+        for _x, _y in ship.get_coordinates():
+            sea_field.remove_ship_from_field(_x, _y)
+        ship.set_coordinates(None)
+
+    if ship.get_orientation() == 'horizontal' and ship.get_length() > 1:
+        orientation = 'vertical'
+        ship = Ship(sea_field.get_ship(ship_num), orientation)
+        ship.set_coordinates(sea_field.check_put_ship(x, y, ship))
+        if ship.get_coordinates():
+            if ship_num + 1 == len(sea_field.get_all_ships()):
+                if not sea_field.get_wounded():
+                    sea_field.add_chance()
+            else:
+                next_ship(sea_field, ship_num + 1, 'horizontal')
+            for _x, _y in ship.get_coordinates():
+                sea_field.remove_ship_from_field(_x, _y)
+            ship.set_coordinates(None)
+
+    sea_field_chance = sea_field.get_sea_field_chance()
+    return sea_field_chance
+
+
 def main():
     """Основная функция."""
+    from multiprocessing import Pool
     field_height = 10
     field_width = 10
 
     # sea_field_original = [[' ' for _ in range(field_width)] for _ in
     #                       range(field_height)]
-    sea_field = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
-    all_ships = [4, 3]
+    sea_field_t = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
+    all_ships = [4, 3, 3, 2]
 
-    sea_field_1 = SeaField(sea_field, field_height, field_width, all_ships)
+    p = Pool()
+    all_data = ((sea_field_t, field_height, field_width, all_ships, x, y) for x
+                in range(field_height) for y in range(field_width))
 
-    num_ship = 0
-    next_ship(sea_field_1, num_ship, 'horizontal')
+    sea_field_chances = p.map(test_func, all_data)
 
-    sea_field_chance = sea_field_1.get_sea_field_chance()
-    length_chances = do_simple_chance(field_height, field_width, sea_field,
-                                      sea_field_chance)
-    print(*sea_field_chance, sep='\n')
-    hit = get_hit(field_height, field_width, sea_field_chance, length_chances)
+    sea_field_chance_end = [[0 for _ in range(field_width)] for _ in
+                            range(field_height)]
+    for field in sea_field_chances:
+        for x in range(field_height):
+            for y in range(field_width):
+                sea_field_chance_end[x][y] += field[x][y]
+
+    # print(*sea_field_chance_end, sep='\n')
+    length_chances = do_simple_chance(field_height, field_width, sea_field_t,
+                                      sea_field_chance_end)
+    print(*sea_field_chance_end, sep='\n')
+    hit = get_hit(field_height, field_width, sea_field_chance_end,
+                  length_chances)
     print('Наилучший удар:', *hit)
 
 
