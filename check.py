@@ -244,46 +244,66 @@ def test_func(all):
 
 def main():
     """Основная функция."""
-    from multiprocessing import Pool
+
+    from multiprocessing import Pool, TimeoutError
     field_height = 10
     field_width = 10
 
     # sea_field_original = [[' ' for _ in range(field_width)] for _ in
     #                       range(field_height)]
-    sea_field_t = [['.', 'x', '.', '.', 'x', '.', 'x', 'x', '.', '.'],
-                   ['.', 'x', '.', '.', 'x', '.', '.', '.', '.', 'x'],
-                   ['.', '.', '.', '.', 'x', '.', '.', '.', '.', 'x'],
-                   ['.', 'x', '.', '.', '.', '.', '.', '.', '.', 'x'],
-                   ['.', 'x', '.', '.', '.', 'x', 'x', '.', '.', '.'],
-                   ['.', 'x', '.', '.', '.', '.', '.', '.', '.', '.'],
-                   ['.', 'x', '.', '.', '.', '.', '.', '.', '.', '.'],
-                   ['.', '.', '.', '.', '.', '.', '.', 'x', '.', '.'],
-                   [' ', ' ', ' ', ' ', '.', '.', '.', '.', '.', '.'],
-                   [' ', ' ', ' ', ' ', '.', 'x', '.', 'x', '.', '.']]
-    all_ships = [1, 1]
-
+    # sea_field_t = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    #                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
+    sea_field_t = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
+    all_ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+    hit = None
     p = Pool()
-    all_data = ((sea_field_t, field_height, field_width, all_ships, x, y) for x
-                in range(field_height) for y in range(field_width))
+    timeout = 15
+    try:
+        for l in range(1, len(all_ships) + 1):
+            all_data = (
+                (sea_field_t, field_height, field_width, all_ships[:l], x, y)
+                for x in range(field_height) for y in range(field_width))
 
-    sea_field_chances = p.map(test_func, all_data)
-    p.close()
-    p.join()
+            sea_field_chances = p.map_async(test_func, all_data)
+            sea_field_chance_end = [[0 for _ in range(field_width)] for _ in
+                                    range(field_height)]
+            result = sea_field_chances.get(timeout)
+            for field in result:
+                for x in range(field_height):
+                    for y in range(field_width):
+                        sea_field_chance_end[x][y] += field[x][y]
 
-    sea_field_chance_end = [[0 for _ in range(field_width)] for _ in
-                            range(field_height)]
-    for field in sea_field_chances:
-        for x in range(field_height):
-            for y in range(field_width):
-                sea_field_chance_end[x][y] += field[x][y]
-
-    # print(*sea_field_chance_end, sep='\n')
-    length_chances = do_simple_chance(field_height, field_width, sea_field_t,
-                                      sea_field_chance_end)
-    print(*sea_field_chance_end, sep='\n')
-    hit = get_hit(field_height, field_width, sea_field_chance_end,
-                  length_chances)
-    print('Наилучший удар:', *hit)
+            length_chances = do_simple_chance(field_height, field_width,
+                                              sea_field_t,
+                                              sea_field_chance_end)
+            # print(*sea_field_chance_end, sep='\n')
+            hit = get_hit(field_height, field_width, sea_field_chance_end,
+                          length_chances)
+    except TimeoutError:
+        print('Почти наилучший удар:', hit)
+    else:
+        print('Наилучший удар:', hit)
+    finally:
+        p.terminate()
+        p.join()
+        return
 
 
 if __name__ == '__main__':
