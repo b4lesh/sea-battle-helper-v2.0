@@ -243,29 +243,15 @@ def test_func(all):
     return sea_field_chance
 
 
-def main(start_time):
+def start(sea_field_t, all_ships, timeout):
     """Основная функция."""
 
     from multiprocessing import Pool, TimeoutError
     field_height = 10
     field_width = 10
-
-    # sea_field_original = [[' ' for _ in range(field_width)] for _ in
-    #                       range(field_height)]
-    sea_field_t = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
-    all_ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+    start_time = time.time()
     hit = None
     p = Pool()
-    timeout = 10
     try:
         for l in range(1, len(all_ships) + 1):
             all_data = (
@@ -288,21 +274,30 @@ def main(start_time):
             hit = get_hit(field_height, field_width, sea_field_chance_end,
                           length_chances)
             if time.time() - start_time > timeout / 2:
-                print('Почти наилучший удар:', hit)
-                p.terminate()
-                p.join()
-                return
+                continue
     except TimeoutError:
-        print('Почти наилучший удар:', hit)
-    else:
-        print('Наилучший удар:', hit)
-    finally:
         p.terminate()
         p.join()
-        return
+    else:
+        p.terminate()
+        p.join()
+    finally:
+        return hit
 
 
 if __name__ == '__main__':
-    start_time = time.time()
-    main(start_time)
-    print('time: ', round(time.time() - start_time, 3))
+    sea_field_t = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
+    all_ships = [4,3,3,2]
+    timeout = 1
+    hit = start(sea_field_t, all_ships, timeout)
+    print(hit)
+    # print('time: ', round(time.time() - start_time, 3))
