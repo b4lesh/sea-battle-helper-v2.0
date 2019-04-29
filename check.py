@@ -1,4 +1,4 @@
-"""Главный  и единственный пока модуль.
+"""Мозги программы.
 
 Переменные:
     sea_field_original - оснвное не изменяемое поле
@@ -13,7 +13,6 @@
     '/' - попадание
     'x' - сбитый корабль
 """
-import time
 
 
 class SeaField:
@@ -246,6 +245,7 @@ def test_func(all):
 def start(sea_field_t, all_ships, timeout):
     """Основная функция."""
 
+    import time
     from multiprocessing import Pool, TimeoutError
     field_height = 10
     field_width = 10
@@ -273,8 +273,9 @@ def start(sea_field_t, all_ships, timeout):
             # print(*sea_field_chance_end, sep='\n')
             hit = get_hit(field_height, field_width, sea_field_chance_end,
                           length_chances)
+            print('Рассчет:', time.time() - start_time)
             if time.time() - start_time > timeout / 2:
-                continue
+                break
     except TimeoutError:
         p.terminate()
         p.join()
@@ -282,22 +283,21 @@ def start(sea_field_t, all_ships, timeout):
         p.terminate()
         p.join()
     finally:
+        print('Бей:', hit)
         return hit
 
-
-if __name__ == '__main__':
-    sea_field_t = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-                   [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
-    all_ships = [4,3,3,2]
-    timeout = 1
-    hit = start(sea_field_t, all_ships, timeout)
-    print(hit)
-    # print('time: ', round(time.time() - start_time, 3))
+# if __name__ == '__main__':
+#     sea_field_t = [[' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+#                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+#                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+#                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+#                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+#                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+#                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+#                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+#                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+#                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
+#     all_ships = [4, 3, 3, 2]
+#     timeout = 1
+#     hit = start(sea_field_t, all_ships, timeout)
+#     print(hit)
