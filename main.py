@@ -1,3 +1,5 @@
+#!env/bin/python3.7
+
 import sys
 import gui
 
@@ -22,8 +24,8 @@ class ExampleApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
 
         self.icon_wound = QtGui.QIcon()
         self.icon_wound.addPixmap(QtGui.QPixmap("icons/wound.png"),
-                                 QtGui.QIcon.Normal,
-                                 QtGui.QIcon.Off)
+                                  QtGui.QIcon.Normal,
+                                  QtGui.QIcon.Off)
 
         self.icon_kill = QtGui.QIcon()
         self.icon_kill.addPixmap(QtGui.QPixmap("icons/kill.png"),
@@ -32,17 +34,16 @@ class ExampleApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
 
         self.icon_empty = QtGui.QIcon()
         self.icon_empty.addPixmap(QtGui.QPixmap("icons/empty.png"),
-                                 QtGui.QIcon.Normal,
-                                 QtGui.QIcon.Off)
+                                  QtGui.QIcon.Normal,
+                                  QtGui.QIcon.Off)
 
         self.icon_maybe = QtGui.QIcon()
         self.icon_maybe.addPixmap(QtGui.QPixmap("icons/maybe.png"),
-                                 QtGui.QIcon.Normal,
-                                 QtGui.QIcon.Off)
+                                  QtGui.QIcon.Normal,
+                                  QtGui.QIcon.Off)
 
         self.sea_field_t = [[' ' for _ in range(field_width)] for _ in
                             range(field_height)]
-
 
         self.all_ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
         self.timeout = 10
@@ -72,7 +73,7 @@ class ExampleApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         try:
             x, y = check.start(self.sea_field_t, self.all_ships, self.timeout)
             self.statusBar.showMessage(f'Готово! Бей: {x} {y}')
-            self.cells[x-1][y-1].setIcon(self.icon_maybe)
+            self.cells[x - 1][y - 1].setIcon(self.icon_maybe)
         except TypeError:
             pass
 
